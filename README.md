@@ -156,6 +156,174 @@ Perfect for developers looking to master backend development, learn API design, 
 
 - [Git](https://git-scm.com/)
 
+
+# ⚠️ Upgrading This Project to Prisma ORM v7
+
+Prisma ORM **v7 introduces breaking changes** that affect how this backend project works.
+If you want to use Prisma v7 instead of v6 (used in the original tutorial), you must apply **all changes below**.
+
+---
+
+## 🔧 1. Install Prisma v7 Packages
+
+```bash
+npm install @prisma/client@7
+npm install -D prisma@7
+npm install @prisma/adapter-pg dotenv
+```
+
+---
+
+## 🔧 2. Enable ESM in `package.json` (Required)
+
+Prisma v7 is **ESM-only**.
+
+```json
+{
+  "type": "module"
+}
+```
+
+---
+
+## 🔧 3. Update Your Prisma Schema
+
+Replace the old generator:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+```
+
+With the new v7 version:
+
+```prisma
+generator client {
+  provider = "prisma-client"
+}
+```
+
+---
+
+## 🔧 4. Create `prisma.config.ts` (Required in v7)
+
+Create this file at the project root:
+
+```ts
+import 'dotenv/config'
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+    seed: 'tsx prisma/seed.ts',
+  },
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})
+```
+
+Prisma v7 no longer reads connection URLs from the schema.
+
+---
+
+## 🔧 5. Update Prisma Client Instantiation
+
+**Old (v4–v6):**
+
+```js
+import { PrismaClient } from '@prisma/client';
+export const prisma = new PrismaClient();
+```
+
+**New (Prisma v7):**
+
+```js
+import { PrismaClient } from './generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL
+});
+
+export const prisma = new PrismaClient({ adapter });
+```
+
+This is required across your project wherever Prisma Client is created.
+
+---
+
+## 🔧 6. Load `.env` Manually
+
+Prisma v7 **does not** automatically load `.env`.
+
+Install dotenv:
+
+```bash
+npm install dotenv
+```
+
+Add to your entry file (e.g., `server.js`):
+
+```js
+import "dotenv/config";
+```
+
+---
+
+## 🔧 7. Update Node.js Version
+
+| Requirement       | Recommended |
+| ----------------- | ----------- |
+| Node **20.19.0+** | Node 22.x   |
+
+Prisma v7 will not run on older Node versions.
+
+---
+
+## 🔧 8. Removed APIs You Might Be Using
+
+### ❌ `prisma.$use()` middleware
+
+→ Replace with client extensions:
+
+```js
+const prisma = new PrismaClient().$extends({
+  query: {
+    user: {
+      async findMany({ args, query }) {
+        return query(args);
+      }
+    }
+  }
+});
+```
+
+### ❌ Metrics API removed
+
+If you used `$metrics`, it no longer exists.
+
+---
+
+## ✔️ Summary of Required Changes
+
+| Change                       | Required  |
+| ---------------------------- | --------- |
+| Update dependencies          | ✅         |
+| ESM mode                     | ✅         |
+| New Prisma generator         | ✅         |
+| Add driver adapter           | ✅         |
+| Create `prisma.config.ts`    | ✅         |
+| Load `.env` manually         | ✅         |
+| Update client instantiation  | ✅         |
+| Replace middleware (if used) | As needed |
+| Update Node version          | Yes       |
+
+
 ### Installation
 
 1. **Clone the repository**
