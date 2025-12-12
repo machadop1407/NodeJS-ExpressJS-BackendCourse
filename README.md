@@ -201,7 +201,7 @@ With the new v7 version:
 
 ```prisma
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
 }
 ```
 
@@ -243,7 +243,7 @@ export const prisma = new PrismaClient();
 **New (Prisma v7):**
 
 ```js
-import { PrismaClient } from './generated/prisma/client.js';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const adapter = new PrismaPg({
